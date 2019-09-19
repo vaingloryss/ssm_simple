@@ -1,0 +1,64 @@
+ssm框架整合
+
+一、spring：
+依赖：
+1、核心包：
+spring-core
+spring-context
+spring-beans
+
+2、AOP包
+spring-aop
+aspectjweaver
+
+3、事务
+spring-tx
+spring-orm
+spring-jdbc
+
+二、springMVC：
+spring-web
+spring-webmvc
+
+三、mybatis：
+
+mybatis
+mybatis-spring
+
+四、JavaEE
+javax.servlet-api
+javax.servlet.jsp-api
+jstl
+
+五、其他
+mysql-connector-java
+junit
+
+六、数据库连接池
+
+1、dbcp2
+依赖：
+commons-dbcp2
+commons-pool2
+commons-logging
+配置
+<!--读取db.properties-->
+<context:property-placeholder location="classpath:db.properties"/>
+<!--配置数据源-->
+<bean id="datasource" class="org.apache.commons.dbcp2.BasicDataSource">
+    <property name="driverClassName" value="${jdbc.driver}"/>
+    <property name="url" value="${jdbc.url}"/>
+    ....
+</bean>
+
+2、 druid
+依赖：
+mybatis
+配置
+<!--读取db.properties-->
+<context:property-placeholder location="classpath:db.properties"/>
+<bean id="datasource" class="com.alibaba.druid.pool.DruidDataSource">
+    <property name="driverClassName" value="${driver}"/>
+    ....
+</bean>
+

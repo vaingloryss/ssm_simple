@@ -1,0 +1,33 @@
+一、Root Cause:
+org.apache.ibatis.binding.BindingException: Invalid bound statement (not found): com.vainglory.mapper.UserMapper.findAll
+
+原因，在pom文件中的build下没有添加resources
+
+<resources>
+  <resource>
+    <directory>src/main/resources</directory>
+  </resource>
+  <resource>
+    <directory>src/main/java</directory>
+    <includes>
+      <include>**/*.properties</include>
+      <include>**/*.xml</include>
+    </includes>
+    <!-- 是否替换资源中的属性-->
+    <filtering>false</filtering>
+  </resource>
+</resources>
+
+二、
+
+com.alibaba.druid.pool.DruidDataSource.error create connection SQLException, url: jdbc:mysql://localhost:3306/ssm, errorCode 1045, state 28000
+Could not open JDBC Connection for transaction; nested exception is com.alibaba.druid.pool.GetConnectionTimeoutException: wait millis 5001, active 0, maxActive 50, creating 0
+java.sql.SQLException: Access denied for user 'Administrator'@'localhost' (using password: YES)
+
+原因：数据库中用户名的配置不能使用username命名，因为系统变量中也有username的属性，会覆盖掉配置中username中的值，如：
+Administrator
+
+解决：数据库配置文件添加前缀
+jdbc.username=root
+jdbc.password=sx96411
+
