@@ -62,3 +62,125 @@ mybatis
     ....
 </bean>
 
+
+
+
+
+
+
+
+zhj
+一、配置前端控制器：
+
+核心前端控制器：DispatcherServlet
+前端：站在项目的最前沿（web.xml）用于接收请求，能接收请求的组件（Servlet和Filter）
+核心：负责调度一切请求，启动SpringMVC的工厂
+
+二、配置后端控制器
+后端控制器，即被@Controller注解标注的java类
+
+三、springMVC配置
+
+1、配置控制器的扫描器，扫描@Controller注解类
+    <context:component-scan base-package="com.vainglory.controller"/>
+2、加载注解驱动
+    <mvc:annotation-driven/>
+3、配置视图解析器-->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/jsp/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+    /:表示这是一个默认的Servlet，接收所有请求（除了jsp）
+
+控制器中的方法被称为Handler
+Handler中的参数可以接受日期类型的数据，Spring和SpringMVC自动识别格式为 2019/10/1 5:12:13，空格会被转义为 %20
+
+响应400：Bad Request，一般都是请求参数格式不正确导致的。
+
+Handler收参四种方式
+1、零散收参
+2、实体收参
+3、数组收参
+4、集合收参
+3和4了解，没有场景支持
+
+
+乱码：
+1、请求乱码：
+前提：页面同一编码
+<%@ page pageEncoding="UTF-8"%>
+get请求：
+tomcat配置：server.xml
+    <Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               redirectPort="8443" URIEncoding="utf-8"/>
+
+post请求：
+request.setCharactorEncoding("utf-8");
+或者在MVC环境下设置编码过滤器
+    <filter>
+        <filter-name>encoding</filter-name>
+        <filter-class>
+            org.springframework.web.filter.CharacterEncodingFilter
+        </filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UFT-8</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>encoding</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+2、响应乱码：
+response.setCharactorEncoding("utf-8");或者
+jsp页面：<%@ page contentType="text/html; charset=UTF-8"%>;
+3、@ResponseBody乱码
+@RequestMapping(value = "/getUserList",produces = "utf-8")
+或者：
+
+
+4、控制台乱码
+JVM启动参数：-Dfile.encoding=utf-8
+
+
+SpringMVC
+C->V
+return "login" : 请求转发
+return "redirect:login.jsp" : 重定向（c->一般没有重定向）
+
+redirect和forward这两个关键字，视图解析器不再添加前后缀，需要写视图的完整路径
+
+C->C
+
+同类
+return "forward:login";相对路径
+跨类
+return "forward:/userController/login";绝对路径
+
+redirect同forward写法一致
+
+细节（重点）
+重定向和请求转发的选择：
+包含增删改的页面，提交后，如果是请求转发跳转，点击刷新会重复提交
+使用重定向避免
+
+增删改之后跳转页面，使用重定向
+查询之后跳转页面，使用请求转发
+
+c -> c 请求功能的自动衔接，如
+增删改之后 -> 查询，跳转为重定向
+
+Jsp细节
+不存在任何一张页面没有经过数据渲染，所以不应该有任何一个请求直接访问jsp，应该经过DisPatcherServlet
+
+
+传值
+C -> V
+请求转发跳转：request
+重定向跳转：session
+获取，requestScope，sessionScope
+
+Model 是MVC提供的额外的域，等价于request，好处：数据和视图解耦，用于支持不同的视图技术（thymeleaf，freemaker等）
+ModelAndView，不推荐开发者使用，SpringMVC内部大量使用，封装Handler处理后的数据和视图。
+Model和ModelAndView中的数据都可以使用requestScope获取

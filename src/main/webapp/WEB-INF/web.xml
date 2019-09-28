@@ -25,7 +25,7 @@
     </filter>
     <filter-mapping>
         <filter-name>encoding</filter-name>
-        <url-pattern>*.action</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
     <!--配置SpringMVC前端核心控制器-->
     <servlet>
@@ -37,12 +37,12 @@
             <param-name>contextConfigLocation</param-name>
             <param-value>classpath:springmvc-config.xml</param-value>
         </init-param>
-        <!--配置服务器启动后立即加载SpringMVC配置文件-->
+        <!--配置服务器启动后立即加载 SpringMVC 配置文件-->
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>
         <servlet-name>springmvc</servlet-name>
-        <!--/:拦截所有请求（除了jsp）-->
+        <!-- /:表示这是一个默认的Servlet，接收所有请求（除了jsp） -->
         <url-pattern>/</url-pattern>
     </servlet-mapping>
 </web-app>
