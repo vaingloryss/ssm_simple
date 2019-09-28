@@ -1,0 +1,245 @@
+﻿课程简介
+1.Spring MVC概述
+2.Spring MVC
+3.使用@RequestMapping映射请求
+4.映射请求参数&请求头
+5.处理模型数据
+6.视图和视图解析器
+
+一、SpringMVC简介
+
+》》Spring 为展现层提供基于MVC设计的优秀的Web框架
+》》Spring MVC是目前最主流的MVC框架之一
+》》Sping3.0 后超越Struts2成为最优秀的MVC框架
+》》Spring MVC 通过MVC注解，让POJO处理请求
+》》控制器无需实现任何接口
+》》支持REST风格的URL请求
+》》非常高的扩展性和灵活性
+
+二、Spring MVC框架的搭建
+
+》》导入jar包
+	
+	注意：
+	1、缺失如下两个jar包会导致tomcat启动失败
+	commons-io-2.5.jar
+	commons-logging-1.2.jar
+	*2、缺少aopalliance包时会报如下错误
+	严重: StandardWrapper.Throwable
+	java.lang.NoClassDefFoundError: org/aopalliance/aop/Advice
+
+》》在web.xml中配置DispatcherServlet
+	！！！
+	DispathcherServlet的配置用springsource-tool-suite-3.9.7插件来完成。
+	注意事项：
+	I、初始化参数：告知当前springmvc的配置文件路径。
+	<init-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:springmvc.xml</param-value>
+	</init-param>
+	II、配置当前servlet映射，url-pattern修改为“/”
+》》加入Spring MVC 配置文件springmvc-config.xml
+	1、导入context命名空间
+	2、配置自动扫描的包，完成 Bean 的创建和自动依赖注入的功能
+		<context:component-scan></context:component-scan>
+	！！！！注意：
+	配置自动扫描的包，完成 Bean 的创建和自动依赖注入的功能时，<context:component-scan>的base-package=""属性的值不能为*，必须指明具体的包名，否则
+	会出现创建bean失败的异常。
+	3、配置视图解析器（一个bean,名称：IntervalResourceViewResover）
+		前缀、后缀
+
+》》编写请求处理器并标识为控制器
+	任何的JavaBean都可以作为控制器，@Controller
+	方法可以接受请求并作出响应，@RequestMapping
+》》编写视图
+
+三、RequestMapping注解
+
+Spring MVC使用RequestMapping注解为控制器指定可以处理哪些URL请求。
+》》在控制器的类定义及方法定义处都可标注
+	-类定义处:提供初步的请求映射信息。相对于WEB应用的根目录
+	-方法处：提供进一步的细分映射信息。相对于类定义处的URL
+         技巧：如果一个注解里面只有一个value属性，可以省略属性名只保留属性名即可
+》》在类上边加入@RequstMapping注解
+	action="类映射/方法映射"
+
+四、RequestMapping精准化映射
+
+》》@RuqestMapping的value、method、params及headers分别表示请求URL、请求方法、请求参数、及请求头的映射条件，他们之间是与的关系，联合使用多个条件可以让请求更加精准化。
+》》params和headers支持简单的表达式：
+	-param1：表示请求必须包含名为param1的请求参数
+	-!param1：表示请求不能包含名为param1的请求参数
+	-param1 != value1：表示请求包含名为param1的请求参数,但其值不能为value1
+	-{“param1=value1”，“param2”}：请求必须包含名为param1和param2的两个请求参数，且param1的参数值必须为value1
+》》用于设置请求方法的请求报头
+@RequestMapping(...,headrs={"accept=text/html"})
+
+五、Ant风格的请求URL
+
+》》Ant风格的资源地址支持3种匹配符：
+-?：匹配文件名中的一个字符
+-*：匹配文件名中的任意字符
+-**：匹配多层路径
+
+》》@RequestMapping还支持Ant风格的URL：
+-/user/*/createUser：匹配/user/aaa/createUser、/user/bbb/createUser等URL
+-/user/**/createUser：匹配/user/createUser、/user/aaa/bbb/createUser等URL
+-/user/createUser??：匹配/user/createUseraa、/user/createUserbb等URL
+
+》》Ant风格的URL让请求更加灵活
+
+六、@PathVariable映射URL绑定占位符
+
+》》带占位符的URL是Spring3.0新增的功能，该功能在SpringMVC向REST目标挺进发展过程中具有里程碑的意义
+
+》》通过@PathVariable可以将URL中占位符参数绑定到控制处理器方法的入参中：URL中的{XXX}占位符可以通过@PathVariable("XXX")绑定到操作方法的入参中。
+	@RequestMapping(value="/testPathVar/{id}")
+	public String testPathVar(@PathVariable(value="id") int id) {
+		
+		System.out.println("走到了testPathVar方法中……");
+		System.out.println("id:"+id);
+		return "success";
+	}
+
+七、REST风格架构
+
+》》REST：即Representational State Transfer。(资源)表现层状态转换。是目前最流行的一种互联网软件架构。它结构清晰、符合标准、易于理解、扩展方便，所以正被广泛使用。
+》》资源：代表网络上的实体
+   表现层：代表把资源呈现在客户端的方式
+   状态转换：HTTP是一种无状态协议，所有状态都要保存在服务器端
+》》具体说，就是HTTP协议里面，四个表示操作方式的动词：GET、POST、PUT、DELETE。它们分别对应四种基本操作：GET 用来获取资源，POST 用来新建资源，PUT 用来更新资源，DELETE 用来删除资源。
+	！！！
+	HiddenHttpMethodFilter：浏览器form表单只支持GET与POST请求，而DELETE、PUT等method并不支持，Spring3.0添加了一个过滤器，可以将这些请求转换为标准的http方法，使得支持GET、POST、PUT、DELETE请求。
+		配置HiddenHttpMethodFilter：
+		<filter>
+    			<filter-name>hiddenHttpMethodFilter</filter-name>
+    			<filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+    		</filter>
+   		<filter-mapping>
+    			<filter-name>hiddenHttpMethodFilter</filter-name>
+    			<url-pattern>/*</url-pattern>
+    		</filter-mapping>
+	get--->get
+	post--->寻找请求参数，是否有一个名字为_method的请求方式，如果有细分为DELETE和PUT请求，如果没有就是POST
+》》在使用REST风格架构时会出现405的错误：The method received in the request-line is known by the origin server but not supported by the target resource.
+	解决办法： 
+	1.加入 @ResponseBody 注解。 
+	2.请求先转给一个Controller,再返回jsp页面。 
+	3.tomcat换到7.0以及以下版本。
+	3.在你的success页面头部文件将
+    	4.<%@ page language="java" contentType="text/html; charset=UTF-8"pageEncoding="UTF-8" isErrorPage="true"%>
+
+八、获取请求正文
+
+》》@RequestParam：可以将请求参数（表单输入域的值）与处理方法的形参进行绑定。
+	@RequestMapping(value="/testRequestParam")
+	public String testRequestParam(@RequestParam(value="id")Integer a,@RequestParam(value="name")String b) {
+	}
+》》如果形参名字与请求参数名称一致，可以省略@RequestParam.
+	@RequestMapping(value="/testRequestParam")
+	public String testRequestParam(Integer id,String name) {
+	}
+》》如果形参名字与请求参数名称不一致，要求@RequestParam标记必须通过values属性指定绑定请求参数的名称。
+》》@RequestParam属性
+	value：请求参数的名称
+	required：是否必须
+
+九、POJO类绑定请求参数
+
+》》POJO：（Plain Ordinary Java Object）简单的Java对象，实际就是普通JavaBeans，是为了避免和EJB混淆所创造的简称。
+》》Spring MVC会按请求参数名和POJO属性名进行自动匹配，自动为该对象填充属性。
+	！！！SpringMVC绑定POJO对象时支持级联绑定
+	
+十、使用@RequestHeader绑定请求报头的属性值
+
+》》请求报头包含了若干属性，服务器可据此获得客户端的信息，通过@RequestHeader即可将请求头中的属性绑定到处理方法的入参中。
+	I、客户端向服务器发送请求的时候，请求由请求行、消息报头（使用@RequestHeader获取）以及请求正文（使用		@RequestParam获取）三个部分组成，
+	II、消息报头包含若干属性，代表了客户端的一些基本信息
+	@RequestMapping("/testRequestHeader")
+	public String testRequestHeader(@RequestHeader("Accept")String accept,@RequestHeader("User-Agent")String userAgent) {
+	}
+
+十一、使用@CookieValue绑定请求中的Cookie值
+	@RequestMapping("testCookieValue")
+	public String testCookieValue(@CookieValue("JSESSIONID")String id) {
+	}
+	JSESSIONID是系统中一个Cookie的ID。
+
+十二、获取原生ServletAPI
+》》使用Servlet API作为入参
+HttpServletRequest（请求）
+HttpServletResponse（响应）
+HttpSession（会话）
+！！！掌握以上三种
+java.security.Principal（授权）
+Locale（本地信息）
+InputStream
+OutputStream
+Reader
+Writer
+Spring MVC的设计初衷是为了完成与servlet的解耦，Spring MVC中尽量少用servletAPI,但是springMVC很多共通业务的底层都是使用大量的servletAPI来完成工作的。
+SpringMVC支持以上九种类型servletAPI作为核心业务处理方法的形参。
+
+十三、ModelAndView处理模型数据
+
+》》SpringMVC提供了以下几种途径输出模型数据：
+	-ModelAndView：处理方法返回值类型为ModelAndView时，方法体即可通过该对象添加模型数据；
+	-Map及Model：入参为org.springframeork.ui.Model、org.springframeork.ui.ModelMap或java.uti.Map时，处理方法返回时，Map中的数据会自动添加到模型中。
+	-@SessionAttributes：将模型中的某个属性暂存到HttpSession中，以便多个请求之间可以共享这个属性。
+	-@modelAttribute：方法入参标注该注解后，入参的对象就会放到数据模型中。 
+
+》》ModelAndView：
+	I、控制器处理方法的返回值如果为ModelAndView，则其既包含视图信息，也包含模型数据信息。
+	II、添加模型数据：
+		-ModelAndView addObject(String attributeName,Object attributeValue)
+		-ModelAndView addAllObjects(Map<String,?> modelMap)
+	III、设置视图：
+		-void setView(View view)
+		-void serViewName(String viewName)
+！！！注意使用addObject方法向ModelAndView对象中添加数据时，这些数据被存放到request范围内！
+
+十四、Map、Model、ModelMap处理模型数据
+
+》》Spring MVC在内部使用了一个org.springframeork.ui.Model接口存储模型数据
+	具体步骤：
+	I、SpringMVC在调用方法前会创建一个隐含的模型对象作为模型数据的存储容器。
+	II、如果方法的入参为Map或Model类型，Spring MVC会将隐含模型的引用传递给这些入参。在方法体内，开发者可以通过这	个入参对象访问到模型中的所有数据，也可以向模型中添加新的属性数据。
+Map:
+	@RequestMapping("/testMap")
+	public String testMap(Map<String,Object> map) {
+		map.put("id", "222");
+		map.put("name", "Tom");
+		return "success";
+	}
+Model:
+	@RequestMapping("/testModel")
+	public String testModel(Model model) {
+		model.addAttribute("id", "333");
+		model.addAttribute("name", "Jack");
+		return "success";
+	}
+ModelMap:
+	@RequestMapping("/testModelMap")
+	public String testModel(ModelMap modelMap) {
+		modelMap.addAttribute("id", "444");
+		modelMap.addAttribute("name", "Susan");
+		return "success";
+	}
+！！！注意：
+	Map、Model、ModelMap在处理模型数据时，都是将数据放在request范围内。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

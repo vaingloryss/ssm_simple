@@ -1,0 +1,89 @@
+﻿52、error标签在页面中获取错误消息
+
+》》在JSP页面中显示错误消息：
+	<form:errors path="userName">显示指定字段的错误消息；
+	<form:errors path="*"></form:errors>显示所有错误消息
+	<form:errors path=""></form:errors>标签必须放置到<form:form>标签的内部
+！！！注意：包含form表单标签库的页面不能直接访问，需要通过一个映射走DispathcherServlet后才能加载
+
+No WebApplicationContext found: not in a DispatcherServlet request and no ContextLoaderListener registered?
+此异常表示：此页面不能直接访问，需要通过一个映射走DispathcherServlet后才能加载
+
+53、错误消息的国际化
+
+》》每个属性在数据绑定和数据校验发生错误时，都会生成一个对应的FieldError对象。
+》》当一个属性校验失败后，校验框架会为该属性生产4个消息代码，这些代码以校验注解类名为前缀，结合莫得了Attribute、属性名及属性类型名生成多个对应的消息代码：例如User类中的password属性标注了一个@Pattern注解，当该属性值不满足@Pattern所定义的规则时，就会产生以下4个错误代码：
+	-- Patten.user.password
+	-- Patten.password
+	-- Patten.java.lang.String
+	-- Patten
+》》当使用SpringMVC 标签显示错误消息时，Spring MVC会查看web上下文是否装配了对应的国际化消息，如果没有，则显示默认的错误消息，否则使用国际化消息。
+
+》》错误消息的定制：
+资源文件当中key=value
+key:验证规则名称.model.属性名称
+配置Bean
+
+54、自定义拦截器
+
+》》SpringMVC 可以使用拦截器对请求进行拦截处理，用户可以自定义拦截器来实现特定功能，自定义的拦截器必须实现HandlerInterceptor接口
+	-- preHandle()：这个方法在业务处理器处理请求之前被调用，在该方法中对用户请求request进行处理。如果程序员决定该拦截	器对请求进行拦截处理后还要进行其他的拦截器，或者是业务处理器去进行处理，则返回true；如果程序员决定不需要再调用其	他的组件去处理请求，则返回false。
+	-- postHandle()：这个方法在业务处理器处理完请求后，但是DispatcherServlet向客户端返回响应前被调用，在该方法中对用户	请求request进行处理。
+	-- afterCompletion()：这个方法在DisPatcherServlet完全处理请求后被调用，可以在该方法中进行一些资源群清理的操作。
+
+》》自定义拦截器使用流程：
+1、自定义拦截器类，实现HandlerInterceptor接口
+2、配置拦截器
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/toFormat"/>
+			<bean id="myInterceptor" class="com.springmvc.crud.interceptor.MyInterceptor"></bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	1、拦截多个请求时可以加入多个mapping
+	2、拦截所有请求：
+	<mvc:interceptors>
+		<bean id="myInterceptor" class="com.springmvc.crud.interceptor.MyInterceptor"></bean>
+	</mvc:interceptors>
+
+55、Java代码中获取国际化信息
+
+I、页面中获取：JSTLView
+	<fmt:message key="资源文件中对应的可key"></fmt:message>
+II、Java代码中获取
+	RequestContext：请求的上下文对象
+	RequestContext context = new RequestContext(request);
+
+56、页面中通过超级链接设置国际化：SessionLocalResolver
+
+》》本地化解析器与拦截器
+1、AcceptHeaderLocaleResolver：根据Http请求头的Accept-Language参数确定本地化类型，如果没有显示定义本地化解析器，SpringMVC使用该解析器。
+2、CookieLocalResolver：根据指定的cookie值确定本地化类型
+3、SessionLocalResolver：根据Session中特定的属性确定本地化类型
+4、LocalChangeInterceptor：从请求参数中获取本次请求对应的本地化类型。
+配置：
+1、配置SessionLocaleResolver
+<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver"></bean>
+！！！注意：该bean的id值必须为：localeResolver，否则会出现如下异常
+2、配置LocaleChangeInterceptor
+<mvc:interceptors>
+	<bean id="localChangeIntercepter" class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor"></bean>
+</mvc:interceptors>
+！！！错误消息
+Cannot change HTTP accept header - use a different locale resolution strategy：无法更改HTTP accept报头——请使用不同的区域设置解析策略
+
+57、AJAX支持之@RequestBody
+
+1、jar包：
+jackson-annotations-2.9.7.jar
+jackson-core-2.9.7.jar
+jackson-databind-2.9.7.jar
+
+2、编写目标方法，使其返回JSON对应的对象或集合
+
+3、在业务方法中获取Ajax发送的jsons数据，将json字符串转换成指定的类型
+	-- 如果是一个简单的json，可以以往的做法，直接在方法的入参加入指定类型的数据
+	-- 入果发送的是一个数组呢，Ajax发送一个数组，业务方法是一个list类型，此时需要 使用@RequestBody注解修饰方法入参，进行数据绑定
+4、@ResponseBody可以将方法的返回值转换成json数据类型
+
+

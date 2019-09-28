@@ -1,0 +1,157 @@
+﻿38、DataBinder数据绑定
+》》DataBinder数据绑定器
+	1、绑定数据时首先获取请求对象HttpServletRequest,将请求参数映射到方法入参位置；并通过反射的方式获取方法入参，最终完成绑定；
+	2、数据绑定时会发生类型转换，DataBinder提供了一个ConvrsionService组建，一、完成数据类型转换；二、格式化（如日期类型的数据）
+	3、数据绑定成功并格式化后，进入Validator进行数据验证；
+	4、以上步骤完成后，DataBinder会自动生成一个BindingResult（绑定结果（正确结果或错误信息）），放在request范围当中，可以在方法的入参中使用BindingResult	对象获取此结果；
+
+40、数据绑定器的初始化：@IntiBinder
+
+》》由@InitBinder标识的方法，可以对WebDataBinder对象进行初始化。WebDataBinder是DataBinder的子类，用于完成由表单字段到JavaBan属性的绑定。
+》》@InitBinder修饰的方法不能有返回值，必须声明为void，参数通常是WebDataBinder
+
+41、自定义类型转换器应用场景
+
+》》应用场景
+	前端通过一个文本框描述一个用户信息（name,age），默认类型转换器此时无法完成类型转换
+
+42、自定义类型转换器
+
+》》如何自定义一个类型转换器（String -> TestUser）
+	1、写一个类型转换器（三种接口）
+		I、Converter<S,T>：S代表原类型，T代表目标类型
+		II、ConverterFactory：工厂模式，通过ConverterFactory：的实现类生成常用的类型转换器，可以将一些常用的类型转换器封装起来；
+		III、GenericConverter：根据原类对象和目标类对象所在的宿主类上下文进行类型转换（了解）
+	2、注册一个类型转换器
+		ConversionServicFactoryBean：帮助spring自动识别IOC容器中的conversionService，在数据绑定时，spring自动的调用对象。
+	<bean id="conversionService" class="org.springframework.context.support.ConversionServiceFactoryBean">
+		<property name="converters">
+			<set>
+			<bean class="com.springmvc.crud.converter.StringToTestUserConverter"></bean>
+			</set>
+		</property>
+	</bean>
+	3、告诉spring，需要使用哪个类型转换器
+	<mvc:annotation-driven conversion-service="conversionService"></mvc:annotation-driven>
+
+43、<mvc:annotation-driven>的作用：
+
+	1、帮助我们自动注册三个Bean：让注解能够使用
+		RequestMappingHandlerMapping：完成RequestMapping注解的一些解析工作
+		RequestMappingHandlerAdapter：RequestMapping的一个适配器，获取RequestMapping以及请求的URL
+		ExceptionHandlerExceptionResolver：解析异常
+	2、<mvc:default-servlet-handler>：
+		用来处理静态资源，只配置此标签时，其他所有映射将不起作用；结合<mvc:annotation-driven>使用
+		I、既没有配置<mvc:default-servlet-handler>，也没有配置<mvc:annotation-driven>：
+		springmvc在handlerAdapters对应的集合里面默认加载三个常用的适配器：
+			HttpRequestHandlerAdapter：跟Http请求相关的适配器
+			SimpleControllerHandlerAdapter：用来做一些简单的控制器处理
+			AnnotationMethodHandlerAdapter：使当前的常用标注起作用
+		II、配置了<mvc:default-servlet-handler>，但没有配置<mvc:annotation-driven>：默认加载
+			HttpRequestHandlerAdapter：
+			SimpleControllerHandlerAdapter：
+		III、既配置了<mvc:default-servlet-handler>，也配置了<mvc:annotation-driven>：默认加载
+			HttpRequestHandlerAdapter：
+			SimpleControllerHandlerAdapter：
+			AnnotationMethodHandlerAdapter
+	3、常用的使用方法
+		I、注册ConversionService
+		II、支持数据的格式化验证
+		III、使用DataTimeFormat标注进行日期格式化处理
+		Iv、通过JSR303验证对指定的控制器的输入参数进行验证，非空、email
+		v、通过HttpMessageConverter使用@RequestBody来完成支持ajax的一些常用操作
+
+44、数据的格式化：
+
+》》@NumberFormat注解在配置<mvc:annotation-driven>后才生效
+》》@NumberFormat标注在POJO类的属性上
+	//每三位一个逗号，保留两位小数
+	@NumberFormat(pattern="#,###.##")
+	private Double salary;
+》》@NumberFormat可对类似数据类型的属性进行标注，它拥有两个互斥的属性：
+	-style：类型为NumberFormat.style。用于指定样式类型，包括三种：Style.NUMBER（正常数字类型）、Style.CURRENCY（	货币类型）、Style.PERCENT（百分数类型）
+	-pattern：类型为String，自定义样式，如pattern=“#，###”，#代表任意数字；
+ConversionServiceFactoryBean：默认不支持格式化，配置ConversionServiceFactoryBean后不能使用@NumberFormat注解；
+解决：把ConversionServiceFactoryBean替换成FormattingConversionServiceFactoryBean
+注意：如果不配置ConversionServiceFactoryBean，spring默认使用的就是FormattingConversionServiceFactoryBean
+
+44、日期的格式化：@DateTimeFormat
+
+》》@DateTimeFormat注解在配置<mvc:annotation-driven>后才生效
+》》@DateTimeFormat标注在POJO类的属性上
+	@DateTimeFormat(pattern="yyyy.MM.dd")
+	private Date birth;
+@DataTimeFormat注解可对java.util.Date、java.util.Calendar、java.long.Long时间类型进行标注：
+	-pattern属性：类型为字符串。指定解析/格式化字段数据的模式，如：“yyyy-MM-dd hh:mm:ss”
+	-iso属性：类型为DateTimeFormat.ISO。指定解析/格式化字段数据的ISO模式，包括四种：ISO.NONE（不使用）--默认、	ISO.DATE(yyyy-MM-dd)、ISO.TIME(hh:mm:ss.SSSZ)、ISO.DATE_TIME(yyyy-MM-dd hh:mm:ss:SSSZ)
+	-style属性：字符串类型。通过样式指定日期时间的格式，由两位字符组成，第一位表示日期的格式，第二位表示时间的格式：
+		S：短日期/时间格式、M：中日期/时间个格式、L：长日期/时间格式、F：完整日期/时间格式、-：忽略日期或时间		格式
+
+45、数据验证的概念及JSR303验证
+
+》》JSR303：Java为JavaBean数据的合法性提供的一个标准化框架；（Java6.0版本）
+
+》》JSR303提供了一些常用的标注：
+	--@Null：被注释的元素必须为null
+	--@NotNull：被注释的元素必须不为null
+	--@AssertTrue：被注释的元素必须为true
+	--@AsserFalse：被注释的元素必须为false
+	--@Min(value)：被注释的元素必须为一个数字，其值必须大于等于指定的最小值
+	--@Max(value)：被注释的元素必须为一个数字，其值必须小于等于指定的最小值
+	--@DecimalMin(value)：被注释的元素必须为一个数字，其值必须大于等于指定的最小值
+	--@DecimalMax(value)：被注释的元素必须为一个数字，其值必须小于等于指定的最小值
+	--@Size(max,min)：被注释的元素的大小必须在指定的范围内
+	--@Digits(integer,faction)：被注释的元素必须是一个数字，其值必须在可接受的范围内
+	--@Past：被注释的元素必须是一个过去的日期；
+	--@Future：被注释的元素必须是一个将来的日期；
+	--@Pattern(value)：被注释的元素必须符合指定的正则表达式；
+
+48、JSR303数据验证流程
+
+	1、Spring并没有提供JSR303的实现，需要导入JSR303的Jar包--validation-api.jar
+	2、为指定的POJO类的相应字段加入JSR303验证对应的注解
+	3、在spring配置文件中配置一个LocalValidatorFactoryBean，并且需要在<mvc:annotation-driven>中的validator属性指定	配置的Bean
+	4、在业务方法的需要验证的入参加上@Valid注解
+
+！！！小技巧：其实springMVC会自动的注册LocalValidatorFactoryBean
+
+》》SpringMVC数据校验：
+	--Spring的LocalValidatorFactoryBean既实现了Spring的Validator接口，也实现了JSR303的Validator接口。只要在Spring容	器中定义一个LocalValidatorFactoryBean，即可将其注入到需要数据校验的Bean中。
+	--Spring本身并没有提供JSR303的实现，需要导入Jar包
+》》使用BindingResult在request获取错误信息
+错误BindingResult包含了很多错误信息，对象放置在request范围中
+	--getErrorCount():int
+	--getAllErrors():List<ObjectError>
+ObjectError:
+	--getDefaultMessage();
+》》异常
+Error creating bean with name 'org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping#0': Invocation of init method failed;
+1、该异常表示@RequestMapping的注解中出现了重复，不能区分从哪个入口进入
+2、jar包版本不合适
+3、缺少jar包
+
+49、LocalVilidator的默认注册
+
+springmvc会自动注册该LocalValidatorFactoryBean,可以删除此配置。
+<bean id="validator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"></bean>
+
+50、Hibernate-Validator验证框架
+
+》》Hibernate-Validator是JSR303的一个参考实现，除了支持所有标准的校验注解外，还支持如下扩展注解
+	--@Email：被注释的元素必须是电子邮箱地址
+	--@Length：被注释的字符串的大小必须在指定范围内
+	--@NotEmpty：被注释的字符串必须非空
+	--@Range：被注释的元素必须在合适的范围内
+Hibernate-Validator中Email在6.0的版本被废弃掉了
+
+50、Controller中捕获错误消息
+
+》》在表单/命令对象的属性中标注校验注解，在处理方法对应的入参前添加@Valid，Spring MVC就会实施校验并将校验结果保存在被校验入参对象之后的BindingResult或Errors入参中
+
+！！！注意：参数列表中，BindingResult或Errors参数必须与@Valid修饰的入参相邻
+
+》》常用方法：
+	--FieldError getFieldError(String field)
+	--List<FieldError> getFieldErrors()
+	--Object getFieldValue(String field)
+	--Int getErrorCount()

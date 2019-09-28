@@ -1,0 +1,150 @@
+﻿十五、@SessionAttributes注解
+》》若希望在多个请求之间共享某个模型属性数据，则可以在控制器类上标注一个@SessionAttributes，SpringMVC将在模型中对应的属性暂存到HttpSession中。
+》》@SessionAttributes除了可以通过属性名指定需要放到会话中的属性外，还可以通过模型属性的对象类型指定哪些模型属性需要放到会话中。
+	-@SessionAttributes(types="User.class")会将隐含模型中所有类型为User.class的属性添加到会话中。
+	-@SessionAttributes(value={"user1","user2"})
+	-@SessionAttributes(types={User.class,Dept.class})
+	-@SessionAttributes(value={"user1","user2"},types={Dept.class})
+》》@SessionAttributes(value={}):
+	！！！！
+	I、session中要放的值，必须在模型数据里面（request范围中）
+	II、标注属性：
+	1) 通过属性key值完成session的共享数据设置：
+	value:String[]
+	value={"a","b"}
+	@SessionAttributes(value= {"id","name"})
+	2) 可以通过模型数据当中的类型，完成共享数据的设置：
+	@SessionAttributes(types= {String.class})
+
+十六、@ModelAttribute作用
+
+》》作用：前端控件绑定POJO对象时进行对象合并；
+	可以修饰方法，还可以修饰方法的入参；
+	修饰方法时分为有返回值和无返回值两种情况；
+》》在方法定义上使用@ModelAttribute注解：Spring MVC在调用目标处理方法前，会先逐个调用在方法上标注了@ModelAttribute的方法。
+》》在方法的入参前使用@ModelAttributes注解：
+	-可以从隐含对象中获取隐含的模型数据中获取对象，再将请求参数绑定到对象中，再传入入参
+	-将方法入参添加到模型中
+
+十七、@ModelAttribute无返回值方法及方法入参
+
+》》原理：1、在调用核心业务方法之前，先从数据库中查询出原始数据，封装到User对象中
+		！！！
+		User对象的命名与类名相同且字母小写时不需要使用@ModelAttribute修饰方法的入参；
+		否则，需要使用@ModelAttribute修饰方法的入参，告知方法入参进行与前端控件绑定之前，需要获取的对应的引用		的key值
+	2、把该原始的User对象的引用作为方法的入参
+	3、再把前端控件的值与该User对象的引用进行绑定
+》》具体步骤：
+	1、执行@ModelAttribute修饰的方法
+		@ModelAttribute
+		//修饰无返回值的方法
+		public void beforeUpdate(Map<String,Object> map) {
+			//模拟从数据库中查询出来的原始信息
+			Account account = new Account(1,"Tom","2016-1-1");
+			map.put("account", account);
+		} 
+	2、获取的原始数据放置到请求范围中指定key对应的value中
+	3、POJO入参会从请求范围中查找指定key对应的value对象，若找到，把对象的引用赋给入参
+	4、前端控件中的数据与业务方法的入参进行绑定。
+		@RequestMapping("/testModelAttri")
+		public String update(Account account) {
+			//模拟通过数据层的内容更新数据
+			System.out.println(account);
+			return "success";
+		}
+十八、@ModelAttribute有返回值方法
+
+1、原始数据对象以首字母小写的类名命名
+	@ModelAttribute()
+	//修饰有返回值的方法
+	public Account beforeUpdate() {
+		//模拟从数据库中查询出来的原始信息
+		Account account = new Account(1,"Tom","2016-1-1");
+		return account;
+	}
+	//核心业务处理方法
+	@RequestMapping("/testModelAttri")
+	public String update(Account account) {}
+2、原始数据对象不以首字母小写的类名命名
+	@ModelAttribute(value="acc")
+	//修饰有返回值的方法
+	public Account beforeUpdate() {
+		//模拟从数据库中查询出来的原始信息
+		Account account = new Account(1,"Tom","2016-1-1");
+		return account;
+	}
+	//核心业务处理方法
+	@RequestMapping("/testModelAttri")
+	public String update(@ModelAttribute("acc")Account account) {}
+
+十九、视图解析流程
+二十、视图解析器的工作原理
+
+I、视图的最终页面渲染，View视图来做，render
+II、跳转到目标视图，请求转发
+III、遍历视图解析器的集合。逻辑视图转换成物理视图
+	protected View resolveViewName(String vieName,Map<String,Object> model,Locale locale,HttpServletRequest request) throws Exception{}
+
+二十一、View接口及其实现类InternalResourceView
+
+》》视图的作用是渲染模型数据，将模型里的数据以某种形式呈现给客户。
+》》为了实现视图模型和具体实现技术的解耦，Spring在org.springframework.web.servlet包中定义了一个高度抽象的View接口。
+》》视图对象由视图解析器负责实例化。由于视图是无状态的，所以他们不会有线程安全问题。
+》》常用的视图解析器实现类
+I、URL视图资源
+	InternalResourceView：将jsp或其他资源封装成一个视图，是InternalResourceViewResolver默认使用的视图实现类。
+	JstlView：如果JSP文件中使用了JSTL国际化标签的功能，则需使用该试图类。
+II、文档视图
+	AbstractExcelView：Excel文档视图的抽象类，该视图基于POI构造Excel文档。
+	AbstractPdfView：PDF文档视图的抽象类，该视图基于iText构造PDF文档。
+III、报表视图
+	ConfigurableJasperReportsView、JasperReportsCsvView、JasperReportsMultiFormatView、JasperReportsHtmlView、	JasperReportsPdfView、JasperReportsXlsView。几个使用JasperReports报表技术的视图。
+VI、JSON视图
+	MappingJacksonView：将模型数据通过Jackson开源框架的ObjectMapper以JSON方式输出。
+
+二十二、JSTLView
+国际化：
+	写对应的资源文件.properties
+	资源文件的名称_语言编码_国家编码.properties
+	abc_zh_CN.properties
+	abc_en_US.properties
+	key=value
+	1、国际化的资源
+	2、告知Spring MVC所使用的资源文件
+		<bean id="messageSource"class="org.springframework.context.support.ResourceBundleMessageSource">
+			<property name="basename" value="abc"></property>
+		</bean>
+	注意事项：id必须为messageSource
+	3、JSTL
+		Core:
+		fmt:message
+》》JSTLView是一种特殊的内部资源视图，是InternalResourceView的子类
+
+二十三、配置视图映射及其注意事项
+
+》》如何给视图直接定义一个映射
+mvc:view-controller
+<mvc:view-controller path="/abcdefg" view-name="a"/>
+如果给一个视图配置了映射信息，其他的控制器方法映射全部无效。
+解决方法：
+在SpringMVC-config文件中加入：<mvc:annotation-driven></mvc:annotation-driven>
+
+二十四、自定义视图及解析器
+
+步骤：
+	I、视图类型：实现一个View接口
+	II、视图类型加载到Spring容器中：BeanNameResolver
+	III、对应视图解析器
+	<bean class="org.springframework.web.servlet.view.BeanNameViewResolver">
+		<property name="order" value="1"></property>
+	</bean>
+注意：order的值越大，视图解析器的优先级越小
+
+
+
+
+
+
+
+
+
